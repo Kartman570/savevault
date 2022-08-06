@@ -40,3 +40,26 @@ def snapshot(source, vault, label=""):
         with destination.open("xb") as target, archive.open("rb") as data:
             shutil.copyfileobj(data, target)
     return identifier
+
+
+def archive_path(vault, identifier):
+    if not identifier.isdigit() or len(identifier) != 6:
+        raise ValueError("Snapshot ID must contain six digits")
+    return Path(vault) / (identifier + ".zip")
+
+
+def manifest(vault, identifier):
+    with zipfile.ZipFile(archive_path(vault, identifier)) as archive:
+        return json.loads(archive.read("manifest.json"))
+
+
+def list_snapshots(vault):
+    result = []
+    for path in sorted(Path(vault).glob("*.zip")):
+        if len(path.stem) != 6 or not path.stem.isdigit():
+            continue
+        data = manifest(vault, path.stem)
+        result.append({"id": path.stem, "label": data["label"],
+                       "files": len(data["files"]),
+                       "bytes": sum(item["size"] for item in data["files"].values())})
+    return result
