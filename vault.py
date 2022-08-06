@@ -63,3 +63,21 @@ def list_snapshots(vault):
                        "files": len(data["files"]),
                        "bytes": sum(item["size"] for item in data["files"].values())})
     return result
+
+
+def verify(vault, identifier):
+    with zipfile.ZipFile(archive_path(vault, identifier)) as archive:
+        data = json.loads(archive.read("manifest.json"))
+        expected = {"manifest.json"}
+        for name, info in data["files"].items():
+            path = Path(name)
+            if not name or path.is_absolute() or ".." in path.parts or "\\" in name:
+                raise ValueError("Unsafe file name in archive")
+            member = "files/" + name
+            expected.add(member)
+            content = archive.read(member)
+            if len(content) != info["size"] or hashlib.sha256(content).hexdigest() != info["sha256"]:
+                raise ValueError("Checksum mismatch: " + name)
+        if set(archive.namelist()) != expected or len(archive.namelist()) != len(expected):
+            raise ValueError("Unexpected or duplicate archive entries")
+    return data
