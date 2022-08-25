@@ -81,3 +81,21 @@ def verify(vault, identifier):
         if set(archive.namelist()) != expected or len(archive.namelist()) != len(expected):
             raise ValueError("Unexpected or duplicate archive entries")
     return data
+
+
+def restore(vault, identifier, destination):
+    data = verify(vault, identifier)
+    destination = Path(destination)
+    if destination.exists() or destination.is_symlink():
+        raise ValueError("Restore destination must not exist")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=destination.parent) as directory:
+        staging = Path(directory) / "restored"
+        staging.mkdir()
+        with zipfile.ZipFile(archive_path(vault, identifier)) as archive:
+            for name in data["files"]:
+                target = staging / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(archive.read("files/" + name))
+        staging.rename(destination)
+    return len(data["files"])
