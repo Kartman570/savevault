@@ -12,6 +12,7 @@ def main():
     backup = commands.add_parser("backup")
     backup.add_argument("source")
     backup.add_argument("--label", default="")
+    backup.add_argument("--exclude", action="append", default=[])
     commands.add_parser("list")
     check = commands.add_parser("verify")
     check.add_argument("identifier")
@@ -21,7 +22,7 @@ def main():
     args = parser.parse_args()
     try:
         if args.command == "backup":
-            result = {"id": snapshot(args.source, args.vault, args.label)}
+            result = {"id": snapshot(args.source, args.vault, args.label, args.exclude)}
         elif args.command == "list":
             result = list_snapshots(args.vault)
         elif args.command == "verify":

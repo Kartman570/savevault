@@ -1,3 +1,4 @@
+import fnmatch
 import hashlib
 import json
 from pathlib import Path
@@ -14,7 +15,7 @@ def digest(path):
     return result.hexdigest()
 
 
-def snapshot(source, vault, label=""):
+def snapshot(source, vault, label="", exclude=()):
     source, vault = Path(source).resolve(), Path(vault).resolve()
     if not source.is_dir():
         raise ValueError("Source must be a directory")
@@ -33,6 +34,8 @@ def snapshot(source, vault, label=""):
                 if not path.is_file():
                     continue
                 relative = path.relative_to(source).as_posix()
+                if any(fnmatch.fnmatch(relative, pattern) for pattern in exclude):
+                    continue
                 output.write(path, "files/" + relative)
                 files[relative] = {"sha256": digest(path), "size": path.stat().st_size}
             output.writestr("manifest.json", json.dumps({"label": label, "files": files}))
