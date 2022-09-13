@@ -2,7 +2,7 @@ import argparse
 import json
 import zipfile
 
-from vault import list_snapshots, restore, snapshot, verify
+from vault import compare, list_snapshots, restore, snapshot, verify
 
 
 def main():
@@ -19,6 +19,9 @@ def main():
     recover = commands.add_parser("restore")
     recover.add_argument("identifier")
     recover.add_argument("destination")
+    diff = commands.add_parser("diff")
+    diff.add_argument("before")
+    diff.add_argument("after")
     args = parser.parse_args()
     try:
         if args.command == "backup":
@@ -27,6 +30,8 @@ def main():
             result = list_snapshots(args.vault)
         elif args.command == "verify":
             result = {"files": len(verify(args.vault, args.identifier)["files"])}
+        elif args.command == "diff":
+            result = compare(args.vault, args.before, args.after)
         else:
             result = {"restored": restore(args.vault, args.identifier, args.destination)}
     except (OSError, ValueError, KeyError, zipfile.BadZipFile) as error:

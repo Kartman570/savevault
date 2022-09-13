@@ -102,3 +102,12 @@ def restore(vault, identifier, destination):
                 target.write_bytes(archive.read("files/" + name))
         staging.rename(destination)
     return len(data["files"])
+
+
+def compare(vault, before, after):
+    old = verify(vault, before)["files"]
+    new = verify(vault, after)["files"]
+    return {"added": sorted(new.keys() - old.keys()),
+            "removed": sorted(old.keys() - new.keys()),
+            "changed": sorted(name for name in old.keys() & new.keys()
+                              if old[name] != new[name])}
