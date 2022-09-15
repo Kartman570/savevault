@@ -2,7 +2,7 @@ import argparse
 import json
 import zipfile
 
-from vault import compare, list_snapshots, restore, snapshot, verify
+from vault import prune, compare, list_snapshots, restore, snapshot, verify
 
 
 def main():
@@ -22,6 +22,9 @@ def main():
     diff = commands.add_parser("diff")
     diff.add_argument("before")
     diff.add_argument("after")
+    cleanup = commands.add_parser("prune")
+    cleanup.add_argument("--keep", type=int, required=True)
+    cleanup.add_argument("--apply", action="store_true")
     args = parser.parse_args()
     try:
         if args.command == "backup":
@@ -30,6 +33,9 @@ def main():
             result = list_snapshots(args.vault)
         elif args.command == "verify":
             result = {"files": len(verify(args.vault, args.identifier)["files"])}
+        elif args.command == "prune":
+            result = {"remove": prune(args.vault, args.keep, args.apply),
+                      "applied": args.apply}
         elif args.command == "diff":
             result = compare(args.vault, args.before, args.after)
         else:

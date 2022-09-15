@@ -111,3 +111,14 @@ def compare(vault, before, after):
             "removed": sorted(old.keys() - new.keys()),
             "changed": sorted(name for name in old.keys() & new.keys()
                               if old[name] != new[name])}
+
+
+def prune(vault, keep, apply=False):
+    if keep < 1:
+        raise ValueError("Keep at least one snapshot")
+    snapshots = list_snapshots(vault)
+    removed = [item["id"] for item in snapshots[:-keep]]
+    if apply:
+        for identifier in removed:
+            archive_path(vault, identifier).unlink()
+    return removed
