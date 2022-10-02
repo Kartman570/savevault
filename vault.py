@@ -73,7 +73,8 @@ def verify(vault, identifier):
             member = "files/" + name
             expected.add(member)
             content = archive.read(member)
-            if len(content) != info["size"] or hashlib.sha256(content).hexdigest() != info["sha256"]:
+            checksum = hashlib.sha256(content).hexdigest()
+            if len(content) != info["size"] or checksum != info["sha256"]:
                 raise ValueError("Checksum mismatch: " + name)
         if set(archive.namelist()) != expected or len(archive.namelist()) != len(expected):
             raise ValueError("Unexpected or duplicate archive entries")
