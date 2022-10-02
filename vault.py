@@ -7,14 +7,6 @@ import tempfile
 import zipfile
 
 
-def digest(path):
-    result = hashlib.sha256()
-    with Path(path).open("rb") as source:
-        for block in iter(lambda: source.read(1024 * 1024), b""):
-            result.update(block)
-    return result.hexdigest()
-
-
 def snapshot(source, vault, label="", exclude=()):
     source, vault = Path(source).resolve(), Path(vault).resolve()
     if not source.is_dir():
@@ -36,8 +28,10 @@ def snapshot(source, vault, label="", exclude=()):
                 relative = path.relative_to(source).as_posix()
                 if any(fnmatch.fnmatch(relative, pattern) for pattern in exclude):
                     continue
-                output.write(path, "files/" + relative)
-                files[relative] = {"sha256": digest(path), "size": path.stat().st_size}
+                content = path.read_bytes()
+                output.writestr("files/" + relative, content)
+                files[relative] = {"sha256": hashlib.sha256(content).hexdigest(),
+                                   "size": len(content)}
             output.writestr("manifest.json", json.dumps({"label": label, "files": files}))
         destination = vault / (identifier + ".zip")
         with destination.open("xb") as target, archive.open("rb") as data:
