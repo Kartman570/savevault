@@ -1,8 +1,8 @@
 import fnmatch
 import hashlib
 import json
+import os
 from pathlib import Path
-import shutil
 import tempfile
 import zipfile
 
@@ -34,8 +34,7 @@ def snapshot(source, vault, label="", exclude=()):
                                    "size": len(content)}
             output.writestr("manifest.json", json.dumps({"label": label, "files": files}))
         destination = vault / (identifier + ".zip")
-        with destination.open("xb") as target, archive.open("rb") as data:
-            shutil.copyfileobj(data, target)
+        os.link(archive, destination)
     return identifier
 
 
@@ -65,11 +64,17 @@ def list_snapshots(vault):
 def verify(vault, identifier):
     with zipfile.ZipFile(archive_path(vault, identifier)) as archive:
         data = json.loads(archive.read("manifest.json"))
+        if not isinstance(data, dict) or not isinstance(data.get("files"), dict):
+            raise ValueError("Invalid archive manifest")
         expected = {"manifest.json"}
         for name, info in data["files"].items():
             path = Path(name)
-            if not name or path.is_absolute() or ".." in path.parts or "\\" in name:
+            if (not name or path.is_absolute() or "\\" in name
+                    or any(part in ("", ".", "..") for part in name.split("/"))):
                 raise ValueError("Unsafe file name in archive")
+            if (not isinstance(info, dict) or type(info.get("size")) is not int
+                    or info["size"] < 0 or not isinstance(info.get("sha256"), str)):
+                raise ValueError("Invalid file metadata: " + name)
             member = "files/" + name
             expected.add(member)
             content = archive.read(member)

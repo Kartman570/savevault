@@ -33,7 +33,8 @@ not malicious replacement. Use this on your own small save files, with the game
 closed: a snapshot is not a transaction across multiple changing files. Each file
 is held in memory while being archived or verified. Do not run concurrent backup,
 restore or cleanup processes against the same vault. This is a local convenience
-tool, not a replacement for an off-device backup.
+tool, not a replacement for an off-device backup. Publishing a completed archive
+uses a hard link within the vault; use a local filesystem with hard-link support.
 
 ## Checks
 
