@@ -78,16 +78,15 @@ class VaultTests(unittest.TestCase):
             restore(self.vault, "000001", self.root / "restored")
         self.assertFalse((self.root / "outside").exists())
 
+    def test_invalid_manifest_shape(self):
+        self.vault.mkdir()
+        with zipfile.ZipFile(self.vault / "000001.zip", "w") as archive:
+            archive.writestr("manifest.json", json.dumps({"files": []}))
+        with self.assertRaises(ValueError):
+            verify(self.vault, "000001")
 
-def test_invalid_manifest_shape(self):
-    self.vault.mkdir()
-    with zipfile.ZipFile(self.vault / "000001.zip", "w") as archive:
-        archive.writestr("manifest.json", json.dumps({"files": []}))
-    with self.assertRaises(ValueError):
-        verify(self.vault, "000001")
-
-def test_partial_backup_not_published(self):
-    (self.source / "link").symlink_to(self.source / "slot.dat")
-    with self.assertRaises(ValueError):
-        snapshot(self.source, self.vault)
-    self.assertEqual(list(self.vault.iterdir()), [])
+    def test_partial_backup_not_published(self):
+        (self.source / "link").symlink_to(self.source / "slot.dat")
+        with self.assertRaises(ValueError):
+            snapshot(self.source, self.vault)
+        self.assertEqual(list(self.vault.iterdir()), [])
